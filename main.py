@@ -40,7 +40,6 @@ def run_web_server():
 
 def generate_advanced_sure_shot_signal(symbol, timeframe):
   candle_patterns = [
-      # --- Existing & New Candlestick Patterns ---
       {
           "pattern": "Three White Soldiers (Bullish Continuation Pattern)",
           "analysis": "Strong bullish momentum with three consecutive long green candles. Indicates heavy institutional buying pressure.",
@@ -71,7 +70,6 @@ def generate_advanced_sure_shot_signal(symbol, timeframe):
           "analysis": "Strong reversal pattern indicating exhaustion of buyers and an imminent sharp drop in the upcoming candle.",
           "bias": "Bearish",
       },
-      # --- Newly Added Candlestick Patterns ---
       {
           "pattern": "Standard Doji",
           "analysis": "Indecision in the market where open and close prices are virtually equal, often preceding a breakout or reversal.",
@@ -98,7 +96,7 @@ def generate_advanced_sure_shot_signal(symbol, timeframe):
           "bias": "Bullish",
       },
       {
-          "pattern": "Hammer / Haturi Candle",
+          "pattern": "Hammer",
           "analysis": "Small body with a long lower shadow at the bottom of a downtrend, signaling strong bullish rejection.",
           "bias": "Bullish",
       },
@@ -108,7 +106,7 @@ def generate_advanced_sure_shot_signal(symbol, timeframe):
           "bias": "Bullish",
       },
       {
-          "pattern": "Hanging Man / Jhulonto Manush",
+          "pattern": "Hanging Man",
           "analysis": "Small body with a long lower shadow appearing at an uptrend top, signaling potential exhaustion of buyers.",
           "bias": "Bearish",
       },
@@ -128,8 +126,8 @@ def generate_advanced_sure_shot_signal(symbol, timeframe):
           "bias": "Bearish",
       },
       {
-          "pattern": "Open Marubozu / Close Marubozu",
-          "analysis": "Marubozu variant indicating strong directional momentum with minorwick adjustments.",
+          "pattern": "Open / Close Marubozu",
+          "analysis": "Marubozu variant indicating strong directional momentum with minor wick adjustments.",
           "bias": "Bullish",
       },
       {
@@ -285,7 +283,6 @@ def stop_auto_signal_callback(call):
     bot.answer_callback_query(call.id, "No active signals found.")
 
 
-# ব্যাকগ্রাউন্ড ওয়ার্কার যা ক্যান্ডেল ক্লোজ হওয়ার ঠিক ৫ সেকেন্ড আগে সিগন্যাল পাঠাবে
 def auto_signal_worker():
   while True:
     time.sleep(1)
@@ -299,7 +296,6 @@ def auto_signal_worker():
       tf_mins = int(timeframe_str.replace("m", ""))
       last_sent_minute = data.get("last_sent_minute", -1)
 
-      # শর্ত: ক্যান্ডেল শেষ হওয়ার ঠিক ৫ সেকেন্ড আগে (যেমন: 55 সেকেন্ডে) সিগন্যাল ট্রিগার করা
       if current_second == 55 and current_minute != last_sent_minute:
         should_send = False
         if tf_mins == 1:
@@ -762,8 +758,8 @@ def ask_timeframe(call):
       chat_id=call.message.chat.id,
       message_id=call.message.message_id,
       text=(
-          f"📊 <b>Asset:</b> <code>{symbol}</code>\n\n👇 *Select timeframe to"
-          " start continuous auto-signals:*"
+          f"📊 <b>Asset:</b> <code>{symbol}</code>\n\n👇 <b>Select timeframe to"
+          " start continuous auto-signals:</b>"
       ),
       parse_mode="HTML",
       reply_markup=markup,
@@ -777,7 +773,6 @@ def send_final_signal(call):
   timeframe = parts[2]
   chat_id = call.message.chat.id
 
-  # Register user for continuous auto signals
   active_subscriptions[chat_id] = {
       "symbol": symbol,
       "timeframe": timeframe,
@@ -845,12 +840,10 @@ def send_final_signal(call):
 
 
 if __name__ == "__main__":
-  # Start Web Server Thread
   server_thread = threading.Thread(target=run_web_server)
   server_thread.daemon = True
   server_thread.start()
 
-  # Start Auto-Signal Background Worker Thread
   auto_thread = threading.Thread(target=auto_signal_worker)
   auto_thread.daemon = True
   auto_thread.start()
