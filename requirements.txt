@@ -1,6 +1,6 @@
 pyTelegramBotAPI
 flask
-pandas
+pandas==2.2.2
 pandas-ta
 yfinance
 pytz
