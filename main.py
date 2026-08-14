@@ -4,6 +4,7 @@ import os
 import threading
 import time
 from flask import Flask
+import pandas as pd
 import pytz
 import telebot
 from telebot import types
@@ -38,7 +39,6 @@ def run_web_server():
   app.run(host="0.0.0.0", port=port)
 
 
-# Mapping user-selected assets to official market tickers for live data fetching
 def get_yahoo_ticker(symbol):
   mapping = {
       "BTC": "BTC-USD",
@@ -56,21 +56,16 @@ def get_yahoo_ticker(symbol):
   return mapping.get(symbol, "BTC-USD")
 
 
-# Official Real Market Candle & Technical Analysis Engine
 def fetch_real_market_candle_signal(symbol, timeframe):
   ticker_symbol = get_yahoo_ticker(symbol)
-
-  # Convert timeframe string to yfinance interval format
   tf_map = {"1m": "1m", "5m": "5m", "15m": "15m"}
   interval = tf_map.get(timeframe, "1m")
 
   try:
-    # Fetch live historical data for the last 1 day to analyze the latest completed/forming candles
     data = yf.download(
         ticker_symbol, period="1d", interval=interval, progress=False
     )
     if data is not None and len(data) >= 3:
-      # Handle MultiIndex columns if returned by yfinance
       if hasattr(data.columns, "levels") and len(data.columns.levels) > 1:
         data.columns = data.columns.get_level_values(0)
 
@@ -90,7 +85,6 @@ def fetch_real_market_candle_signal(symbol, timeframe):
       upper_shadow = high_p - max(open_p, close_p)
       lower_shadow = min(open_p, close_p) - low_p
 
-      # Calculate Real RSI from closing prices
       delta = data["Close"].diff()
       gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
       loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
@@ -105,17 +99,14 @@ def fetch_real_market_candle_signal(symbol, timeframe):
       raise Exception("Insufficient data points")
   except Exception as e:
     logging.error(f"Live data fetch error for {symbol}: {e}")
-    # Fallback to neutral default live metrics if network blocks data fetch temporarily
     open_p, close_p, high_p, low_p = 100.0, 100.5, 101.0, 99.5
     upper_shadow, lower_shadow, body_size = 0.5, 0.5, 0.5
     rsi_val = 50.0
 
-  # Official Candlestick Pattern Recognition Logic
   pattern_name = "Standard Trend Bar"
   bias = "Neutral"
 
   if total_range > 0:
-    # Hammer Pattern: Small body, long lower shadow (at least 2x body), little/no upper shadow
     if (
         lower_shadow >= (2 * body_size)
         and upper_shadow <= (0.5 * body_size)
@@ -123,7 +114,6 @@ def fetch_real_market_candle_signal(symbol, timeframe):
     ):
       pattern_name = "Hammer (Bullish Rejection at Support)"
       bias = "Bullish"
-    # Shooting Star Pattern: Small body, long upper shadow (at least 2x body), little/no lower shadow
     elif (
         upper_shadow >= (2 * body_size)
         and lower_shadow <= (0.5 * body_size)
@@ -131,11 +121,9 @@ def fetch_real_market_candle_signal(symbol, timeframe):
     ):
       pattern_name = "Shooting Star (Bearish Rejection at Resistance)"
       bias = "Bearish"
-    # Bullish Engulfing: Current green candle completely engulfs previous red candle
     elif close_p > open_p and prev_close < prev_open and close_p >= prev_open:
       pattern_name = "Bullish Engulfing (Strong Momentum Reversal)"
       bias = "Bullish"
-    # Bearish Engulfing: Current red candle completely engulfs previous green candle
     elif close_p < open_p and prev_close > prev_open and close_p <= prev_open:
       pattern_name = "Bearish Engulfing (Strong Selling Pressure)"
       bias = "Bearish"
@@ -146,7 +134,6 @@ def fetch_real_market_candle_signal(symbol, timeframe):
       pattern_name = "Bearish Marubozu / Drop Candle"
       bias = "Bearish"
 
-  # Final prediction mapping based on strict real candlestick pattern and live RSI confirmation
   if bias == "Bullish" or rsi_val < 42:
     prediction = "🟢 NEXT CANDLE: UP (CALL) [100% VERIFIED]"
     action_advice = (
