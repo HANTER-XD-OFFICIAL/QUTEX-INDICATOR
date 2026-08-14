@@ -8,7 +8,7 @@ import pytz
 import telebot
 from telebot import types
 
-TOKEN = "8908381436:AAG0KD5BuSxqMQgBO07tMCAjL7eVe3cl1W4"
+TOKEN = "8908381436:AAGeva6PKOPFPPUcx36tKUuUA4rQne5CmlM"
 DEVELOPER_NAME = "@HANTER_XD_OFFICIAL"
 DEVELOPER_LINK = "https://t.me/HANTER_XD_OFFICIAL"
 OTHER_BOT_LINK = "https://t.me/qutex7intigateaur_bot"
@@ -212,7 +212,8 @@ def show_main_menu(chat_id):
   btn2 = types.KeyboardButton("🪙 Crypto Markets")
   btn3 = types.KeyboardButton("🛢 Commodities & Stocks")
   btn4 = types.KeyboardButton("⚡ Live News Flash")
-  btn5 = types.KeyboardButton("🛡 Approve to Admin Contact")
+  # বাটনটির নাম পরিবর্তন করে আরও আকর্ষণীয় করা হলো
+  btn5 = types.KeyboardButton("🛡 Admin Contact")
   btn6 = types.KeyboardButton("💬 Support")
   markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
 
@@ -394,7 +395,7 @@ def handle_menu(message):
         reply_markup=markup,
     )
 
-  elif "Approve to Admin Contact" in text:
+  elif "Admin Contact" in text:
     markup = types.InlineKeyboardMarkup()
     markup.add(
         types.InlineKeyboardButton(
