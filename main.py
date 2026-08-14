@@ -8,7 +8,7 @@ import pytz
 import telebot
 from telebot import types
 
-TOKEN = "8908381436:AAGeva6PKOPFPPUcx36tKUuUA4rQne5CmlM"
+TOKEN = "8908381436:AAG0KD5BuSxqMQgBO07tMCAjL7eVe3cl1W4"
 DEVELOPER_NAME = "@HANTER_XD_OFFICIAL"
 DEVELOPER_LINK = "https://t.me/HANTER_XD_OFFICIAL"
 OTHER_BOT_LINK = "https://t.me/qutex7intigateaur_bot"
