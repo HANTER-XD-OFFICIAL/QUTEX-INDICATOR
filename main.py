@@ -155,7 +155,22 @@ def generate_advanced_sure_shot_signal(symbol, timeframe):
   )
 
 
-# Background thread to send continuous auto-signals based on selected timeframe
+@bot.callback_query_handler(func=lambda call: call.data == "stop_auto")
+def stop_auto_signal_callback(call):
+  chat_id = call.message.chat.id
+  if chat_id in active_subscriptions:
+    del active_subscriptions[chat_id]
+    bot.answer_callback_query(call.id, "Auto-Signals Stopped Successfully!")
+    bot.edit_message_text(
+        chat_id=chat_id,
+        message_id=call.message.message_id,
+        text="🛑 <b>Auto-Signals have been stopped for this market.</b>",
+        parse_mode="HTML"
+    )
+  else:
+    bot.answer_callback_query(call.id, "No active signals found.")
+
+
 def auto_signal_worker():
   while True:
     time.sleep(5)
@@ -188,7 +203,7 @@ def auto_signal_worker():
               f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
               f"🔹 <b>Target Pair:</b> <code>{symbol}</code>\n"
               f"⏱ <b>Candle Timeframe:</b> <code>{timeframe}</code>\n"
-              f"🇧🇩 <b>BDT Execution Window:</b> <code>{start_time} to"
+              f"⏰ <b>Execution Window:</b> <code>{start_time} to"
               f" {end_time}</code>\n"
               f"📈 <b>Prediction:</b> {prediction}\n"
               f"🎯 <b>Accuracy Rate:</b> <code>{accuracy}</code>\n"
@@ -201,12 +216,19 @@ def auto_signal_worker():
               f" href='{DEVELOPER_LINK}'>{DEVELOPER_NAME}</a>\n"
               f"━━━━━━━━━━━━━━━━━━━━━━━━━━"
           )
+          
           markup = types.InlineKeyboardMarkup()
+          markup.add(
+              types.InlineKeyboardButton(
+                  "🛑 Stop Auto-Signals", callback_data="stop_auto"
+              )
+          )
           markup.add(
               types.InlineKeyboardButton(
                   "🌐 Open High-Performance Bot Portal", url=OTHER_BOT_LINK
               )
           )
+          
           bot.send_message(
               chat_id,
               report,
@@ -657,6 +679,11 @@ def send_final_signal(call):
   markup = types.InlineKeyboardMarkup()
   markup.add(
       types.InlineKeyboardButton(
+          "🛑 Stop Auto-Signals", callback_data="stop_auto"
+      )
+  )
+  markup.add(
+      types.InlineKeyboardButton(
           "🌐 Open High-Performance Bot Portal", url=OTHER_BOT_LINK
       )
   )
@@ -666,7 +693,7 @@ def send_final_signal(call):
       f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
       f"🔹 <b>Target Pair:</b> <code>{symbol}</code>\n"
       f"⏱ <b>Candle Timeframe:</b> <code>{timeframe}</code>\n"
-      f"🇧🇩 <b>BDT Execution Window:</b> <code>{start_time} to {end_time}</code>\n"
+      f"⏰ <b>Execution Window:</b> <code>{start_time} to {end_time}</code>\n"
       f"📈 <b>Prediction:</b> {prediction}\n"
       f"🎯 <b>Accuracy Rate:</b> <code>{accuracy}</code>\n"
       f"🕯 <b>Pattern:</b> <i>{pattern_name}</i>\n"
