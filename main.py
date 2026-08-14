@@ -21,7 +21,8 @@ logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
-approved_users = set()
+approved_users = set()  # Stores approved user IDs
+user_info_dict = {}  # Stores user details {user_id: {"name": ..., "username": ...}}
 pending_requests = {}
 
 
@@ -158,15 +159,22 @@ def send_welcome(message):
   username = message.from_user.username
   name = message.from_user.first_name
 
-  if username and username.lower() == ADMIN_USERNAME.lower():
+  user_info_dict[user_id] = {
+      "name": name,
+      "username": username if username else "None",
+  }
+
+  is_admin = (user_id == ADMIN_CHAT_ID) or (
+      username and username.lower() == ADMIN_USERNAME.lower()
+  )
+
+  if is_admin:
     approved_users.add(user_id)
-    show_main_menu(message.chat.id)
+    show_main_menu(message.chat.id, is_admin=True)
     return
 
-  if user_id in approved_users or (
-      username and username.lower() == ADMIN_USERNAME.lower()
-  ):
-    show_main_menu(message.chat.id)
+  if user_id in approved_users:
+    show_main_menu(message.chat.id, is_admin=False)
   else:
     pending_requests[user_id] = message.chat.id
 
@@ -203,7 +211,7 @@ def send_welcome(message):
     bot.send_message(message.chat.id, waiting_text, parse_mode="HTML")
 
 
-def show_main_menu(chat_id):
+def show_main_menu(chat_id, is_admin=False):
   markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
   btn1 = types.KeyboardButton("💱 Currencies (OTC)")
   btn2 = types.KeyboardButton("🪙 Crypto Markets")
@@ -211,7 +219,14 @@ def show_main_menu(chat_id):
   btn4 = types.KeyboardButton("⚡ Live News Flash")
   btn5 = types.KeyboardButton("🛡 Admin Contact")
   btn6 = types.KeyboardButton("💬 Support")
-  markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
+
+  if is_admin:
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
+    # Exclusive Admin-only large button at the bottom under Support
+    btn_manage = types.KeyboardButton("👥 Manage Users")
+    markup.add(btn_manage)
+  else:
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
 
   welcome_text = (
       f"🚀 <b>Welcome to Elite AI 100% Sure-Shot Signal Bot!</b> 🚀\n\n"
@@ -289,17 +304,53 @@ def reject_user_callback(call):
       logging.error(f"Failed to notify rejected user: {e}")
 
 
+@bot.callback_query_handler(func=lambda call: call.data.startswith("revoke_"))
+def revoke_user_callback(call):
+  target_user_id = int(call.data.split("_")[1])
+  if target_user_id in approved_users:
+    approved_users.remove(target_user_id)
+
+  bot.answer_callback_query(call.id, "Access Revoked Successfully!")
+
+  u_info = user_info_dict.get(
+      target_user_id, {"name": "Unknown", "username": "None"}
+  )
+  bot.edit_message_text(
+      chat_id=call.message.chat.id,
+      message_id=call.message.message_id,
+      text=(
+          f"🚫 <b>Access Revoked!</b>\n👤 <b>Name:</b>"
+          f" {u_info['name']}\n🆔 <b>User ID:</b>"
+          f" <code>{target_user_id}</code>\nAccess has been successfully"
+          " canceled."
+      ),
+      parse_mode="HTML",
+  )
+
+  try:
+    bot.send_message(
+        target_user_id,
+        (
+            "⚠️ <b>Access Revoked!</b>\nYour access to the signal bot has been"
+            " revoked by the admin."
+        ),
+        parse_mode="HTML",
+    )
+  except Exception as e:
+    logging.error(f"Failed to notify user about revoked access: {e}")
+
+
 @bot.message_handler(func=lambda message: True)
 def handle_menu(message):
   user_id = message.from_user.id
   username = message.from_user.username
   chat_id = message.chat.id
 
-  is_admin = (username and username.lower() == ADMIN_USERNAME.lower()) or (
-      user_id in approved_users
+  is_admin = (user_id == ADMIN_CHAT_ID) or (
+      username and username.lower() == ADMIN_USERNAME.lower()
   )
 
-  if not is_admin:
+  if not is_admin and user_id not in approved_users:
     bot.send_message(
         chat_id,
         (
@@ -311,6 +362,35 @@ def handle_menu(message):
     return
 
   text = message.text
+
+  # Restricted strictly to Admin only
+  if text == "👥 Manage Users":
+    if not is_admin:
+      bot.send_message(
+          chat_id, "⚠️ You are not authorized to use this command."
+      )
+      return
+
+    total_approved = len(approved_users)
+    markup = types.InlineKeyboardMarkup(row_width=1)
+
+    for uid in list(approved_users):
+      info = user_info_dict.get(uid, {"name": "User", "username": "None"})
+      display_name = f"{info['name']} (@{info['username']})"[:30]
+      markup.add(
+          types.InlineKeyboardButton(
+              f"❌ Revoke: {display_name}", callback_data=f"revoke_{uid}"
+          )
+      )
+
+    admin_panel_text = (
+        f"👥 <b>Admin User Management Panel</b>\n\n"
+        f"📊 <b>Total Approved Users:</b> <code>{total_approved}</code>\n\n"
+        f"<i>Click the button next to any user below to immediately cancel"
+        f" their access:</i>"
+    )
+    bot.send_message(chat_id, admin_panel_text, reply_markup=markup, parse_mode="HTML")
+    return
 
   if "Currencies" in text:
     markup = types.InlineKeyboardMarkup(row_width=2)
@@ -529,17 +609,21 @@ def send_final_signal(call):
 
 
 if __name__ == "__main__":
-  try:
-    bot.remove_webhook()
-  except Exception:
-    pass
-
   server_thread = threading.Thread(target=run_web_server)
   server_thread.daemon = True
   server_thread.start()
 
   print(
-      "Elite AI 100% Sure-Shot Signal Bot with Admin Approval & English UI is"
+      "Elite AI 100% Sure-Shot Signal Bot with Secure Admin-Only User Control is"
       " running successfully."
   )
-  bot.infinity_polling(none_stop=True, interval=0, timeout=20)
+
+  while True:
+    try:
+      bot.remove_webhook()
+      bot.infinity_polling(none_stop=True, interval=1, timeout=30)
+    except Exception as e:
+      logging.error(f"Polling error: {e}")
+      import time
+
+      time.sleep(5)
