@@ -137,7 +137,7 @@ def fetch_real_market_candle_signal(symbol, timeframe):
   bias = "Neutral"
 
   if total_range > 0:
-    if body <= total_range * 0.1:
+    if body_size <= total_range * 0.1:
       if lower_shadow >= total_range * 0.6:
         pattern_name = "Dragonfly Doji"
         bias = "Bullish"
@@ -677,7 +677,7 @@ def handle_menu(message):
     )
     markup.add(
         types.InlineKeyboardButton(
-            "🌐 Open High-Performance Bot Portal", url=OTHER_BOT_LINK
+            "🌐 OpenHigh-Performance Bot Portal", url=OTHER_BOT_LINK
         )
     )
     bot.send_message(
