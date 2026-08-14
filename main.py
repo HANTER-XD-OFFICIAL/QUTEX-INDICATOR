@@ -14,7 +14,7 @@ DEVELOPER_LINK = "https://t.me/HANTER_XD_OFFICIAL"
 OTHER_BOT_LINK = "https://t.me/qutex7intigateaur_bot"
 
 ADMIN_USERNAME = "HANTER_XD_OFFICIAL"
-ADMIN_CHAT_ID = None
+ADMIN_CHAT_ID = 6204875999
 
 bot = telebot.TeleBot(TOKEN)
 logging.basicConfig(level=logging.INFO)
@@ -158,10 +158,7 @@ def send_welcome(message):
   username = message.from_user.username
   name = message.from_user.first_name
 
-  global ADMIN_CHAT_ID
-
   if username and username.lower() == ADMIN_USERNAME.lower():
-    ADMIN_CHAT_ID = user_id
     approved_users.add(user_id)
     show_main_menu(message.chat.id)
     return
@@ -212,7 +209,6 @@ def show_main_menu(chat_id):
   btn2 = types.KeyboardButton("🪙 Crypto Markets")
   btn3 = types.KeyboardButton("🛢 Commodities & Stocks")
   btn4 = types.KeyboardButton("⚡ Live News Flash")
-  # বাটনটির নাম পরিবর্তন করে আরও আকর্ষণীয় করা হলো
   btn5 = types.KeyboardButton("🛡 Admin Contact")
   btn6 = types.KeyboardButton("💬 Support")
   markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
