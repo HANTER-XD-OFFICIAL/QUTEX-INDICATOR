@@ -40,53 +40,167 @@ def run_web_server():
 
 def generate_advanced_sure_shot_signal(symbol, timeframe):
   candle_patterns = [
+      # --- Existing & New Candlestick Patterns ---
       {
           "pattern": "Three White Soldiers (Bullish Continuation Pattern)",
-          "analysis": (
-              "Strong bullish momentum with three consecutive long green"
-              " candles. Indicates heavy institutional buying pressure."
-          ),
+          "analysis": "Strong bullish momentum with three consecutive long green candles. Indicates heavy institutional buying pressure.",
           "bias": "Bullish",
       },
       {
           "pattern": "Bullish Engulfing with High Volume",
-          "analysis": (
-              "A large green candle completely engulfs the previous red"
-              " candle, signaling an aggressive trend reversal to the upside."
-          ),
+          "analysis": "A large green candle completely engulfs the previous red candle, signaling an aggressive trend reversal to the upside.",
           "bias": "Bullish",
       },
       {
           "pattern": "Morning Star at Key Support Level",
-          "analysis": (
-              "Three-candle reversal pattern showing sellers losing momentum"
-              " and buyers taking total control of the next candle."
-          ),
+          "analysis": "Three-candle reversal pattern showing sellers losing momentum and buyers taking total control of the next candle.",
           "bias": "Bullish",
       },
       {
           "pattern": "Three Black Crows (Bearish Continuation Pattern)",
-          "analysis": (
-              "Consecutive strong red candles showing aggressive selling"
-              " pressure and institutional profit-taking."
-          ),
+          "analysis": "Consecutive strong red candles showing aggressive selling pressure and institutional profit-taking.",
           "bias": "Bearish",
       },
       {
           "pattern": "Bearish Engulfing Rejection",
-          "analysis": (
-              "A dominant red candle engulfs the prior green candle, indicating"
-              " immediate downward price rejection."
-          ),
+          "analysis": "A dominant red candle engulfs the prior green candle, indicating immediate downward price rejection.",
           "bias": "Bearish",
       },
       {
           "pattern": "Evening Star at Resistance Zone",
-          "analysis": (
-              "Strong reversal pattern indicating exhaustion of buyers and an"
-              " imminent sharp drop in the upcoming candle."
-          ),
+          "analysis": "Strong reversal pattern indicating exhaustion of buyers and an imminent sharp drop in the upcoming candle.",
           "bias": "Bearish",
+      },
+      # --- Newly Added Candlestick Patterns ---
+      {
+          "pattern": "Standard Doji",
+          "analysis": "Indecision in the market where open and close prices are virtually equal, often preceding a breakout or reversal.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Dragonfly Doji",
+          "analysis": "Long lower shadow indicates heavy buying pressure rejecting lower prices at support. Bullish reversal.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Gravestone Doji",
+          "analysis": "Long upper shadow shows buyers failing to sustain higher prices, dominated by strong sellers at resistance. Bearish reversal.",
+          "bias": "Bearish",
+      },
+      {
+          "pattern": "Long-Legged Doji",
+          "analysis": "Shows extreme market volatility and indecision with large upper and lower shadows before a decisive move.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Four-Price Doji",
+          "analysis": "Open, high, low, and close are identical. Indicates absolute market freeze or extreme tight consolidation.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Hammer / Haturi Candle",
+          "analysis": "Small body with a long lower shadow at the bottom of a downtrend, signaling strong bullish rejection.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Inverted Hammer",
+          "analysis": "Small body with a long upper shadow after a downtrend, indicating buyers are testing higher price levels.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Hanging Man / Jhulonto Manush",
+          "analysis": "Small body with a long lower shadow appearing at an uptrend top, signaling potential exhaustion of buyers.",
+          "bias": "Bearish",
+      },
+      {
+          "pattern": "Shooting Star",
+          "analysis": "Small body at the lower end with a long upper shadow near resistance, showing strong selling pressure.",
+          "bias": "Bearish",
+      },
+      {
+          "pattern": "Bullish Marubozu",
+          "analysis": "A long green candle with no wicks, showing absolute control by buyers from open to close.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Bearish Marubozu",
+          "analysis": "A long red candle with no wicks, showing absolute dominance by sellers throughout the session.",
+          "bias": "Bearish",
+      },
+      {
+          "pattern": "Open Marubozu / Close Marubozu",
+          "analysis": "Marubozu variant indicating strong directional momentum with minorwick adjustments.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Spinning Top",
+          "analysis": "Small real body centered between equal upper and lower shadows, showing market indecision.",
+          "bias": "Bearish",
+      },
+      {
+          "pattern": "High Wave Candle",
+          "analysis": "Wide trading range with long wicks reflecting high market volatility and shifting sentiment.",
+          "bias": "Bearish",
+      },
+      {
+          "pattern": "Tweezers Top",
+          "analysis": "Two or more matching highs in consecutive candles signaling strong resistance rejection.",
+          "bias": "Bearish",
+      },
+      {
+          "pattern": "Tweezers Bottom",
+          "analysis": "Matching lows in consecutive candles showing strong price floor and support formation.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Piercing Line",
+          "analysis": "A bullish reversal pattern where a green candle opens lower but closes past the midpoint of the prior red candle.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Dark Cloud Cover",
+          "analysis": "A bearish reversal pattern where a red candle opens higher but plunges deep into the prior green candle's body.",
+          "bias": "Bearish",
+      },
+      {
+          "pattern": "Morning Doji Star",
+          "analysis": "Morning star variation featuring a doji in the middle, signaling high-probability bullish reversal.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Evening Doji Star",
+          "analysis": "Evening star variation with a doji at the peak, pointing to a sharp upcoming market drop.",
+          "bias": "Bearish",
+      },
+      {
+          "pattern": "Three Inside Up",
+          "analysis": "Bullish reversal confirmation pattern following a harami formation.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Three Inside Down",
+          "analysis": "Bearish reversal confirmation pattern following a bearish harami structure.",
+          "bias": "Bearish",
+      },
+      {
+          "pattern": "Three Outside Up",
+          "analysis": "Bullish confirmation pattern where a large green candle engulfs the previous body completely.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Three Outside Down",
+          "analysis": "Bearish confirmation pattern where a large red candle engulfs the previous body completely.",
+          "bias": "Bearish",
+      },
+      {
+          "pattern": "Belt Hold",
+          "analysis": "Single-candle strong opening Marubozu pattern showing aggressive trend continuation or reversal.",
+          "bias": "Bullish",
+      },
+      {
+          "pattern": "Pin Bar",
+          "analysis": "Long nose-like rejection wick indicating strong price rejection and immediate reversal setup.",
+          "bias": "Bullish",
       },
   ]
 
@@ -171,7 +285,7 @@ def stop_auto_signal_callback(call):
     bot.answer_callback_query(call.id, "No active signals found.")
 
 
-# ব্যাকগ্রাউন্ড ওয়ার্কার যা ক্যান্ডেল ক্লোজ হওয়ার ৫ সেকেন্ড আগে সিগন্যাল পাঠাবে
+# ব্যাকগ্রাউন্ড ওয়ার্কার যা ক্যান্ডেল ক্লোজ হওয়ার ঠিক ৫ সেকেন্ড আগে সিগন্যাল পাঠাবে
 def auto_signal_worker():
   while True:
     time.sleep(1)
@@ -185,10 +299,8 @@ def auto_signal_worker():
       tf_mins = int(timeframe_str.replace("m", ""))
       last_sent_minute = data.get("last_sent_minute", -1)
 
-      # শর্ত: ক্যান্ডেল শেষ হওয়ার ঠিক ৫ সেকেন্ড আগে (যেমন: 55 সেকেন্ডে) এবং এই মিনিটের জন্য সিগন্যাল একবারই পাঠানো হবে
-      if current_second == 55 and (current_minute % tf_mins == 0 or tf_mins > 1 and current_minute % tf_mins == tf_mins - 1) and current_minute != last_sent_minute:
-        
-        # যদি ১৫ মিনিট বা ৫ মিনিটের টাইমফ্রেম হয় তবে নির্দিষ্ট ইন্টারভালে ট্রিগার করার লজিক
+      # শর্ত: ক্যান্ডেল শেষ হওয়ার ঠিক ৫ সেকেন্ড আগে (যেমন: 55 সেকেন্ডে) সিগন্যাল ট্রিগার করা
+      if current_second == 55 and current_minute != last_sent_minute:
         should_send = False
         if tf_mins == 1:
           should_send = True
