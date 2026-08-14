@@ -10,7 +10,7 @@ import telebot
 from telebot import types
 import yfinance as yf
 
-TOKEN = "8908381436:AAGMvclESdtmPr0xVL-KbB5njDbH02q0prI"
+TOKEN = "8908381436:AAFIBxgdCDFwOdKLvYMdyKByHoUQ2xU7Crc"
 DEVELOPER_NAME = "@HANTER_XD_OFFICIAL"
 DEVELOPER_LINK = "https://t.me/HANTER_XD_OFFICIAL"
 OTHER_BOT_LINK = "https://t.me/qutex7intigateaur_bot"
@@ -41,19 +41,39 @@ def run_web_server():
 
 def get_yahoo_ticker(symbol):
   mapping = {
+      # Real Forex Pairs (Non-OTC)
+      "EURUSD": "EURUSD=X",
+      "GBPUSD": "GBPUSD=X",
+      "EURJPY": "EURJPY=X",
+      "EURGBP": "EURGBP=X",
+      "CADJPY": "CADJPY=X",
+      "GBPJPY": "GBPJPY=X",
+      "AUDJPY": "AUDJPY=X",
+      "USDJPY": "USDJPY=X",
+      "AUDCAD": "AUDCAD=X",
+      "EURCAD": "EURCAD=X",
+      "EURCHF": "EURCHF=X",
+      "GBPAUD": "GBPAUD=X",
+      "EURAUD": "EURAUD=X",
+      "GBPCAD": "GBPCAD=X",
+      "USDCHF": "USDCHF=X",
+      "AUDCHF": "AUDCHF=X",
+      "AUDUSD": "AUDUSD=X",
+      "GBPCHF": "GBPCHF=X",
+      "USDCAD": "USDCAD=X",
+      "CHFJPY": "CHFJPY=X",
+      # OTC Pairs & Others
+      "USDBDT": "USD=X",
+      "AUDNZD": "AUDNZD=X",
       "BTC": "BTC-USD",
       "ETH": "ETH-USD",
       "SOL": "SOL-USD",
       "TON": "TON11419-USD",
-      "EURUSD": "EURUSD=X",
-      "GBPUSD": "GBPUSD=X",
-      "USDBDT": "USD=X",
-      "AUDNZD": "AUDNZD=X",
       "Gold": "GC=F",
       "UKBrent": "BZ=F",
       "EUROSTOXX": "^STOXX50E",
   }
-  return mapping.get(symbol, "BTC-USD")
+  return mapping.get(symbol, "EURUSD=X")
 
 
 def fetch_real_market_candle_signal(symbol, timeframe):
@@ -346,20 +366,21 @@ def send_welcome(message):
 
 def show_main_menu(chat_id, is_admin=False):
   markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-  btn1 = types.KeyboardButton("💱 Currencies (OTC)")
-  btn2 = types.KeyboardButton("🪙 Crypto Markets")
-  btn3 = types.KeyboardButton("🛢 Commodities & Stocks")
-  btn4 = types.KeyboardButton("⚡ Live News Flash")
-  btn5 = types.KeyboardButton("🛡 Admin Contact")
-  btn6 = types.KeyboardButton("💬 Support")
-  btn7 = types.KeyboardButton("🛑 Stop Auto-Signals")
+  btn1 = types.KeyboardButton("🌐 Real Forex Markets (Live)")
+  btn2 = types.KeyboardButton("💱 Currencies (OTC)")
+  btn3 = types.KeyboardButton("🪙 Crypto Markets")
+  btn4 = types.KeyboardButton("🛢 Commodities & Stocks")
+  btn5 = types.KeyboardButton("⚡ Live News Flash")
+  btn6 = types.KeyboardButton("🛡 Admin Contact")
+  btn7 = types.KeyboardButton("💬 Support")
+  btn8 = types.KeyboardButton("🛑 Stop Auto-Signals")
 
   if is_admin:
-    markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7)
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8)
     btn_manage = types.KeyboardButton("👥 Manage Users")
     markup.add(btn_manage)
   else:
-    markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7)
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8)
 
   welcome_text = (
       f"🚀 <b>Welcome to Elite AI Live Candle-Verified Signal Bot!</b> 🚀\n\n"
@@ -539,7 +560,42 @@ def handle_menu(message):
     bot.send_message(chat_id, admin_panel_text, reply_markup=markup, parse_mode="HTML")
     return
 
-  if "Currencies" in text:
+  if "Real Forex Markets" in text:
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup.add(
+        types.InlineKeyboardButton("EUR/USD (Real)", callback_data="asset_EURUSD"),
+        types.InlineKeyboardButton("GBP/USD (Real)", callback_data="asset_GBPUSD"),
+        types.InlineKeyboardButton("EUR/JPY (Real)", callback_data="asset_EURJPY"),
+        types.InlineKeyboardButton("EUR/GBP (Real)", callback_data="asset_EURGBP"),
+        types.InlineKeyboardButton("USD/JPY (Real)", callback_data="asset_USDJPY"),
+        types.InlineKeyboardButton("GBP/JPY (Real)", callback_data="asset_GBPJPY"),
+        types.InlineKeyboardButton("AUD/JPY (Real)", callback_data="asset_AUDJPY"),
+        types.InlineKeyboardButton("CAD/JPY (Real)", callback_data="asset_CADJPY"),
+        types.InlineKeyboardButton("AUD/USD (Real)", callback_data="asset_AUDUSD"),
+        types.InlineKeyboardButton("USD/CAD (Real)", callback_data="asset_USDCAD"),
+        types.InlineKeyboardButton("USD/CHF (Real)", callback_data="asset_USDCHF"),
+        types.InlineKeyboardButton("EUR/CAD (Real)", callback_data="asset_EURCAD"),
+        types.InlineKeyboardButton("EUR/CHF (Real)", callback_data="asset_EURCHF"),
+        types.InlineKeyboardButton("GBP/AUD (Real)", callback_data="asset_GBPAUD"),
+        types.InlineKeyboardButton("EURAUD (Real)", callback_data="asset_EURAUD"),
+        types.InlineKeyboardButton("GBP/CAD (Real)", callback_data="asset_GBPCAD"),
+        types.InlineKeyboardButton("AUD/CHF (Real)", callback_data="asset_AUDCHF"),
+        types.InlineKeyboardButton("GBP/CHF (Real)", callback_data="asset_GBPCHF"),
+        types.InlineKeyboardButton("AUD/CAD (Real)", callback_data="asset_AUDCAD"),
+        types.InlineKeyboardButton("CHF/JPY (Real)", callback_data="asset_CHFJPY"),
+    )
+    markup.add(
+        types.InlineKeyboardButton(
+            "🌐 Open High-Performance Bot Portal", url=OTHER_BOT_LINK
+        )
+    )
+    bot.send_message(
+        chat_id,
+        "Select Real Forex Pair (Live Non-OTC Market):",
+        reply_markup=markup,
+    )
+
+  elif "Currencies" in text:
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
         types.InlineKeyboardButton("EUR/USD (OTC)", callback_data="asset_EURUSD"),
@@ -554,7 +610,7 @@ def handle_menu(message):
     )
     bot.send_message(
         chat_id,
-        "Select Currency Pair for Live Candle-Verified Analysis:",
+        "Select OTC Currency Pair for Analysis:",
         reply_markup=markup,
     )
 
