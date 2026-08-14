@@ -1,7 +1,7 @@
-pyTelegramBotAPI
-flask
+pyTelegramBotAPI==4.20.0
+flask==3.0.3
 pandas==2.2.2
-pandas-ta
-yfinance
-pytz
-gunicorn
+pandas-ta==0.3.14b0
+yfinance==0.2.40
+pytz==2024.1
+gunicorn==22.0.0
