@@ -3,6 +3,7 @@ import logging
 import os
 import random
 import threading
+import time
 from flask import Flask
 import pytz
 import telebot
@@ -21,9 +22,10 @@ logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
-approved_users = set()  # Stores approved user IDs
-user_info_dict = {}  # Stores user details {user_id: {"name": ..., "username": ...}}
+approved_users = set()
+user_info_dict = {}
 pending_requests = {}
+active_subscriptions = {}  # Stores ongoing auto-signals for users
 
 
 @app.route("/")
@@ -153,6 +155,69 @@ def generate_advanced_sure_shot_signal(symbol, timeframe):
   )
 
 
+# Background thread to send continuous auto-signals based on selected timeframe
+def auto_signal_worker():
+  while True:
+    time.sleep(5)
+    current_time = time.time()
+    for chat_id, data in list(active_subscriptions.items()):
+      symbol = data["symbol"]
+      timeframe = data["timeframe"]
+      last_sent = data["last_sent"]
+
+      tf_seconds = int(timeframe.replace("m", "")) * 60
+
+      if current_time - last_sent >= tf_seconds:
+        active_subscriptions[chat_id]["last_sent"] = current_time
+        try:
+          (
+              prediction,
+              accuracy,
+              pattern_name,
+              pattern_analysis,
+              news_title,
+              news_impact,
+              rsi,
+              start_time,
+              end_time,
+              action_advice,
+          ) = generate_advanced_sure_shot_signal(symbol, timeframe)
+
+          report = (
+              f"🔄📊 <b>LIVE AUTO-SIGNAL UPDATE ({timeframe})</b> 📊🔄\n"
+              f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+              f"🔹 <b>Target Pair:</b> <code>{symbol}</code>\n"
+              f"⏱ <b>Candle Timeframe:</b> <code>{timeframe}</code>\n"
+              f"🇧🇩 <b>BDT Execution Window:</b> <code>{start_time} to"
+              f" {end_time}</code>\n"
+              f"📈 <b>Prediction:</b> {prediction}\n"
+              f"🎯 <b>Accuracy Rate:</b> <code>{accuracy}</code>\n"
+              f"🕯 <b>Pattern:</b> <i>{pattern_name}</i>\n"
+              f"🧠 <b>Analysis:</b> {pattern_analysis}\n"
+              f"📢 <b>News Feed:</b> {news_title} ({news_impact})\n"
+              f"📉 <b>RSI Score:</b> <code>{rsi}</code>\n"
+              f"💡 <b>Strategy:</b> {action_advice}\n"
+              f"👨‍💻 <b>Developer:</b> <a"
+              f" href='{DEVELOPER_LINK}'>{DEVELOPER_NAME}</a>\n"
+              f"━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          )
+          markup = types.InlineKeyboardMarkup()
+          markup.add(
+              types.InlineKeyboardButton(
+                  "🌐 Open High-Performance Bot Portal", url=OTHER_BOT_LINK
+              )
+          )
+          bot.send_message(
+              chat_id,
+              report,
+              parse_mode="HTML",
+              disable_web_page_preview=True,
+              reply_markup=markup,
+          )
+        except Exception as e:
+          logging.error(f"Failed to send auto signal to {chat_id}: {e}")
+
+
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
   user_id = message.from_user.id
@@ -219,21 +284,21 @@ def show_main_menu(chat_id, is_admin=False):
   btn4 = types.KeyboardButton("⚡ Live News Flash")
   btn5 = types.KeyboardButton("🛡 Admin Contact")
   btn6 = types.KeyboardButton("💬 Support")
+  btn7 = types.KeyboardButton("🛑 Stop Auto-Signals")
 
   if is_admin:
-    markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
-    # Exclusive Admin-only large button at the bottom under Support
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7)
     btn_manage = types.KeyboardButton("👥 Manage Users")
     markup.add(btn_manage)
   else:
-    markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7)
 
   welcome_text = (
       f"🚀 <b>Welcome to Elite AI 100% Sure-Shot Signal Bot!</b> 🚀\n\n"
       f"Powered by Advanced Candle Analysis, Real-Time News Filters, and Broker"
       f" Price Action Feeds.\n\n👨‍💻 <b>Lead Developer:</b> <a"
       f" href='{DEVELOPER_LINK}'>{DEVELOPER_NAME}</a>\n\n👇 <i>Select your"
-      f" target market below to get 100% sure-shot signals:</i>"
+      f" target market below to get continuous auto-signals:</i>"
   )
   bot.send_message(
       chat_id,
@@ -309,6 +374,8 @@ def revoke_user_callback(call):
   target_user_id = int(call.data.split("_")[1])
   if target_user_id in approved_users:
     approved_users.remove(target_user_id)
+  if target_user_id in active_subscriptions:
+    del active_subscriptions[target_user_id]
 
   bot.answer_callback_query(call.id, "Access Revoked Successfully!")
 
@@ -363,7 +430,19 @@ def handle_menu(message):
 
   text = message.text
 
-  # Restricted strictly to Admin only
+  if text == "🛑 Stop Auto-Signals":
+    if chat_id in active_subscriptions:
+      del active_subscriptions[chat_id]
+      bot.send_message(
+          chat_id,
+          "🛑 <b>Auto-Signals Stopped Successfully!</b>\nYou will no longer"
+          " receive automated signals until you select a new market.",
+          parse_mode="HTML",
+      )
+    else:
+      bot.send_message(chat_id, "ℹ️ No active auto-signals running right now.")
+    return
+
   if text == "👥 Manage Users":
     if not is_admin:
       bot.send_message(
@@ -406,9 +485,7 @@ def handle_menu(message):
         )
     )
     bot.send_message(
-        chat_id,
-        "Select Currency Pair for Sure-Shot Analysis:",
-        reply_markup=markup,
+        chat_id, "Select Currency Pair for Auto-Signal Analysis:", reply_markup=markup
     )
 
   elif "Crypto" in text:
@@ -425,9 +502,7 @@ def handle_menu(message):
         )
     )
     bot.send_message(
-        chat_id,
-        "Select Crypto Asset for Sure-Shot Analysis:",
-        reply_markup=markup,
+        chat_id, "Select Crypto Asset for Auto-Signal Analysis:", reply_markup=markup
     )
 
   elif "Commodities" in text:
@@ -448,7 +523,7 @@ def handle_menu(message):
     )
     bot.send_message(
         chat_id,
-        "Select Commodity or Stock for Sure-Shot Analysis:",
+        "Select Commodity or Stock for Auto-Signal Analysis:",
         reply_markup=markup,
     )
 
@@ -464,7 +539,7 @@ def handle_menu(message):
         (
             "📰 <b>Real-Time Broker & Global News Feed:</b>\n\n🔥 [CHECKED]"
             " Market liquidity is optimal.\n⚡ [CHECKED] Macro news impact"
-            " verified.\n🚀 [READY] All systems clear for 100% Sure-Shot"
+            " verified.\n🚀 [READY] All systems clear for continuous"
             " execution."
         ),
         parse_mode="HTML",
@@ -518,13 +593,13 @@ def ask_timeframe(call):
   markup = types.InlineKeyboardMarkup(row_width=3)
   markup.add(
       types.InlineKeyboardButton(
-          "⚡ 1 Minute (Fast Sure-Shot)", callback_data=f"tf_{symbol}_1m"
+          "⚡ 1 Minute (Auto Continuous)", callback_data=f"tf_{symbol}_1m"
       ),
       types.InlineKeyboardButton(
-          "⏱ 5 Minutes", callback_data=f"tf_{symbol}_5m"
+          "⏱ 5 Minutes (Auto Continuous)", callback_data=f"tf_{symbol}_5m"
       ),
       types.InlineKeyboardButton(
-          "⏳ 15 Minutes", callback_data=f"tf_{symbol}_15m"
+          "⏳ 15 Minutes (Auto Continuous)", callback_data=f"tf_{symbol}_15m"
       ),
   )
   markup.add(
@@ -536,8 +611,8 @@ def ask_timeframe(call):
       chat_id=call.message.chat.id,
       message_id=call.message.message_id,
       text=(
-          f"📊 <b>Asset:</b> <code>{symbol}</code>\n\n👇 *Select candle"
-          " timeframe for next-candle prediction:*"
+          f"📊 <b>Asset:</b> <code>{symbol}</code>\n\n👇 *Select timeframe to"
+          " start continuous auto-signals:*"
       ),
       parse_mode="HTML",
       reply_markup=markup,
@@ -549,12 +624,20 @@ def send_final_signal(call):
   parts = call.data.split("_")
   symbol = parts[1]
   timeframe = parts[2]
+  chat_id = call.message.chat.id
+
+  # Register user for continuous auto signals
+  active_subscriptions[chat_id] = {
+      "symbol": symbol,
+      "timeframe": timeframe,
+      "last_sent": time.time(),
+  }
 
   bot.answer_callback_query(
       call.id,
       (
-          f"Checking News, Broker Feeds & Analyzing {symbol} Candlestick"
-          " Patterns..."
+          f"Auto-Signals Activated for {symbol} ({timeframe})! First signal"
+          " incoming..."
       ),
   )
 
@@ -579,27 +662,26 @@ def send_final_signal(call):
   )
 
   report = (
-      f"🎯📊 <b>ELITE 100% SURE-SHOT SIGNAL REPORT</b> 📊🎯\n"
+      f"🎯📊 <b>ELITE CONTINUOUS AUTO-SIGNAL STARTED</b> 📊🎯\n"
       f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
       f"🔹 <b>Target Pair:</b> <code>{symbol}</code>\n"
       f"⏱ <b>Candle Timeframe:</b> <code>{timeframe}</code>\n"
-      f"🇧🇩 <b>BDT Execution Window (Time):</b> <code>{start_time} to"
-      f" {end_time}</code>\n"
+      f"🇧🇩 <b>BDT Execution Window:</b> <code>{start_time} to {end_time}</code>\n"
       f"📈 <b>Prediction:</b> {prediction}\n"
       f"🎯 <b>Accuracy Rate:</b> <code>{accuracy}</code>\n"
-      f"🕯 <b>Identified Candlestick Pattern:</b> <i>{pattern_name}</i>\n"
-      f"🧠 <b>Candle & Market Analysis:</b> {pattern_analysis}\n"
-      f"📢 <b>News & Broker Feed Check:</b> {news_title} ({news_impact})\n"
-      f"📉 <b>RSI Momentum Score:</b> <code>{rsi}</code>\n"
-      f"💡 <b>Action Strategy:</b> {action_advice}\n"
+      f"🕯 <b>Pattern:</b> <i>{pattern_name}</i>\n"
+      f"🧠 <b>Analysis:</b> {pattern_analysis}\n"
+      f"📢 <b>News Feed:</b> {news_title} ({news_impact})\n"
+      f"📉 <b>RSI Score:</b> <code>{rsi}</code>\n"
+      f"💡 <b>Strategy:</b> {action_advice}\n"
       f"👨‍💻 <b>Developer:</b> <a"
       f" href='{DEVELOPER_LINK}'>{DEVELOPER_NAME}</a>\n"
       f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-      f"⚠️ <i>Strictly follow the BDT time window and enter precisely on the"
-      f" next candle opening for 100% success.</i>"
+      f"⚠️ <i>Auto-signals will continue every {timeframe} until you change"
+      f" market or press 'Stop Auto-Signals'.</i>"
   )
   bot.edit_message_text(
-      chat_id=call.message.chat.id,
+      chat_id=chat_id,
       message_id=call.message.message_id,
       text=report,
       parse_mode="HTML",
@@ -609,13 +691,19 @@ def send_final_signal(call):
 
 
 if __name__ == "__main__":
+  # Start Web Server Thread
   server_thread = threading.Thread(target=run_web_server)
   server_thread.daemon = True
   server_thread.start()
 
+  # Start Auto-Signal Background Worker Thread
+  auto_thread = threading.Thread(target=auto_signal_worker)
+  auto_thread.daemon = True
+  auto_thread.start()
+
   print(
-      "Elite AI 100% Sure-Shot Signal Bot with Secure Admin-Only User Control is"
-      " running successfully."
+      "Elite AI Continuous Auto-Signal Bot with Admin Controls is running"
+      " successfully."
   )
 
   while True:
@@ -624,6 +712,4 @@ if __name__ == "__main__":
       bot.infinity_polling(none_stop=True, interval=1, timeout=30)
     except Exception as e:
       logging.error(f"Polling error: {e}")
-      import time
-
       time.sleep(5)
