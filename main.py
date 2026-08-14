@@ -171,73 +171,90 @@ def stop_auto_signal_callback(call):
     bot.answer_callback_query(call.id, "No active signals found.")
 
 
+# ব্যাকগ্রাউন্ড ওয়ার্কার যা ক্যান্ডেল ক্লোজ হওয়ার ৫ সেকেন্ড আগে সিগন্যাল পাঠাবে
 def auto_signal_worker():
   while True:
-    time.sleep(5)
-    current_time = time.time()
+    time.sleep(1)
+    bd_tz = pytz.timezone("Asia/Dhaka")
+    now_bd = datetime.datetime.now(bd_tz)
+    current_second = now_bd.second
+    current_minute = now_bd.minute
+
     for chat_id, data in list(active_subscriptions.items()):
-      symbol = data["symbol"]
-      timeframe = data["timeframe"]
-      last_sent = data["last_sent"]
+      timeframe_str = data["timeframe"]
+      tf_mins = int(timeframe_str.replace("m", ""))
+      last_sent_minute = data.get("last_sent_minute", -1)
 
-      tf_seconds = int(timeframe.replace("m", "")) * 60
+      # শর্ত: ক্যান্ডেল শেষ হওয়ার ঠিক ৫ সেকেন্ড আগে (যেমন: 55 সেকেন্ডে) এবং এই মিনিটের জন্য সিগন্যাল একবারই পাঠানো হবে
+      if current_second == 55 and (current_minute % tf_mins == 0 or tf_mins > 1 and current_minute % tf_mins == tf_mins - 1) and current_minute != last_sent_minute:
+        
+        # যদি ১৫ মিনিট বা ৫ মিনিটের টাইমফ্রেম হয় তবে নির্দিষ্ট ইন্টারভালে ট্রিগার করার লজিক
+        should_send = False
+        if tf_mins == 1:
+          should_send = True
+        elif tf_mins == 5 and current_minute % 5 == 4:
+          should_send = True
+        elif tf_mins == 15 and current_minute % 15 == 14:
+          should_send = True
 
-      if current_time - last_sent >= tf_seconds:
-        active_subscriptions[chat_id]["last_sent"] = current_time
-        try:
-          (
-              prediction,
-              accuracy,
-              pattern_name,
-              pattern_analysis,
-              news_title,
-              news_impact,
-              rsi,
-              start_time,
-              end_time,
-              action_advice,
-          ) = generate_advanced_sure_shot_signal(symbol, timeframe)
+        if should_send:
+          active_subscriptions[chat_id]["last_sent_minute"] = current_minute
+          symbol = data["symbol"]
 
-          report = (
-              f"🔄📊 <b>LIVE AUTO-SIGNAL UPDATE ({timeframe})</b> 📊🔄\n"
-              f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-              f"🔹 <b>Target Pair:</b> <code>{symbol}</code>\n"
-              f"⏱ <b>Candle Timeframe:</b> <code>{timeframe}</code>\n"
-              f"⏰ <b>Execution Window:</b> <code>{start_time} to"
-              f" {end_time}</code>\n"
-              f"📈 <b>Prediction:</b> {prediction}\n"
-              f"🎯 <b>Accuracy Rate:</b> <code>{accuracy}</code>\n"
-              f"🕯 <b>Pattern:</b> <i>{pattern_name}</i>\n"
-              f"🧠 <b>Analysis:</b> {pattern_analysis}\n"
-              f"📢 <b>News Feed:</b> {news_title} ({news_impact})\n"
-              f"📉 <b>RSI Score:</b> <code>{rsi}</code>\n"
-              f"💡 <b>Strategy:</b> {action_advice}\n"
-              f"👨‍💻 <b>Developer:</b> <a"
-              f" href='{DEVELOPER_LINK}'>{DEVELOPER_NAME}</a>\n"
-              f"━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          )
-          
-          markup = types.InlineKeyboardMarkup()
-          markup.add(
-              types.InlineKeyboardButton(
-                  "🛑 Stop Auto-Signals", callback_data="stop_auto"
-              )
-          )
-          markup.add(
-              types.InlineKeyboardButton(
-                  "🌐 Open High-Performance Bot Portal", url=OTHER_BOT_LINK
-              )
-          )
-          
-          bot.send_message(
-              chat_id,
-              report,
-              parse_mode="HTML",
-              disable_web_page_preview=True,
-              reply_markup=markup,
-          )
-        except Exception as e:
-          logging.error(f"Failed to send auto signal to {chat_id}: {e}")
+          try:
+            (
+                prediction,
+                accuracy,
+                pattern_name,
+                pattern_analysis,
+                news_title,
+                news_impact,
+                rsi,
+                start_time,
+                end_time,
+                action_advice,
+            ) = generate_advanced_sure_shot_signal(symbol, timeframe_str)
+
+            report = (
+                f"🔄📊 <b>LIVE AUTO-SIGNAL UPDATE ({timeframe_str})</b> 📊🔄\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🔹 <b>Target Pair:</b> <code>{symbol}</code>\n"
+                f"⏱ <b>Candle Timeframe:</b> <code>{timeframe_str}</code>\n"
+                f"⏰ <b>Execution Window:</b> <code>{start_time} to"
+                f" {end_time}</code>\n"
+                f"📈 <b>Prediction:</b> {prediction}\n"
+                f"🎯 <b>Accuracy Rate:</b> <code>{accuracy}</code>\n"
+                f"🕯 <b>Pattern:</b> <i>{pattern_name}</i>\n"
+                f"🧠 <b>Analysis:</b> {pattern_analysis}\n"
+                f"📢 <b>News Feed:</b> {news_title} ({news_impact})\n"
+                f"📉 <b>RSI Score:</b> <code>{rsi}</code>\n"
+                f"💡 <b>Strategy:</b> {action_advice}\n"
+                f"👨‍💻 <b>Developer:</b> <a"
+                f" href='{DEVELOPER_LINK}'>{DEVELOPER_NAME}</a>\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            )
+            
+            markup = types.InlineKeyboardMarkup()
+            markup.add(
+                types.InlineKeyboardButton(
+                    "🛑 Stop Auto-Signals", callback_data="stop_auto"
+                )
+            )
+            markup.add(
+                types.InlineKeyboardButton(
+                    "🌐 Open High-Performance Bot Portal", url=OTHER_BOT_LINK
+                )
+            )
+            
+            bot.send_message(
+                chat_id,
+                report,
+                parse_mode="HTML",
+                disable_web_page_preview=True,
+                reply_markup=markup,
+            )
+          except Exception as e:
+            logging.error(f"Failed to send auto signal to {chat_id}: {e}")
 
 
 @bot.message_handler(commands=["start"])
@@ -652,14 +669,13 @@ def send_final_signal(call):
   active_subscriptions[chat_id] = {
       "symbol": symbol,
       "timeframe": timeframe,
-      "last_sent": time.time(),
+      "last_sent_minute": -1,
   }
 
   bot.answer_callback_query(
       call.id,
       (
-          f"Auto-Signals Activated for {symbol} ({timeframe})! First signal"
-          " incoming..."
+          f"Auto-Signals Activated for {symbol} ({timeframe})! Waiting for the next candle close window..."
       ),
   )
 
@@ -704,8 +720,7 @@ def send_final_signal(call):
       f"👨‍💻 <b>Developer:</b> <a"
       f" href='{DEVELOPER_LINK}'>{DEVELOPER_NAME}</a>\n"
       f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-      f"⚠️ <i>Auto-signals will continue every {timeframe} until you change"
-      f" market or press 'Stop Auto-Signals'.</i>"
+      f"⚠️ <i>Auto-signals will be delivered 5 seconds before every candle closes until you press 'Stop Auto-Signals'.</i>"
   )
   bot.edit_message_text(
       chat_id=chat_id,
